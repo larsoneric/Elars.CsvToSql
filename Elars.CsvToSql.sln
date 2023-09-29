@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34024.191
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elars.CsvToSql.Core", "Elars.CsvToSql.Core\Elars.CsvToSql.Core.csproj", "{B39F2955-26B7-4B22-A002-9AB343D60009}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elars.CsvToSql.UI", "Elars.CsvToSql.UI\Elars.CsvToSql.UI.csproj", "{47AD8A9D-97C9-49E2-86FB-BA15BDD4AF29}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B39F2955-26B7-4B22-A002-9AB343D60009}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B39F2955-26B7-4B22-A002-9AB343D60009}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B39F2955-26B7-4B22-A002-9AB343D60009}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B39F2955-26B7-4B22-A002-9AB343D60009}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47AD8A9D-97C9-49E2-86FB-BA15BDD4AF29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47AD8A9D-97C9-49E2-86FB-BA15BDD4AF29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47AD8A9D-97C9-49E2-86FB-BA15BDD4AF29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47AD8A9D-97C9-49E2-86FB-BA15BDD4AF29}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {63D34473-79A4-470B-9CC8-C39B6CC9843C}
+	EndGlobalSection
+EndGlobal
