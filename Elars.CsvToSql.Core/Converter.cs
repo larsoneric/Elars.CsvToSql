@@ -72,11 +72,17 @@ namespace Elars.CsvToSql.Core
         public bool Reseed { get; set; } = false;
 
         /// <summary>
+        /// Fields that should always be treated as strings (e.g. Zip Code)
+        /// Default: none
+        /// </summary>
+        public IList<string> StringFields { get; set; } = new List<string>();
+
+        /// <summary>
         /// Size for VARCHAR fields
         /// Default: 100
         /// </summary>
         public int StringSize { get; set; } = 100;
-        
+
         /// <summary>
         /// How many decimal places should DECIMAL fields have
         /// Default: 2
@@ -154,7 +160,7 @@ namespace Elars.CsvToSql.Core
             sql += $"CREATE TABLE {tableName} ({Environment.NewLine}";
 
             var columns = Enumerable.Range(0, csv.FieldCount)
-                .Select(i => $"  {EscapedName(csv.GetName(i), AllowSpaces)} {SqlColumnType(csv.GetFieldTypeExtended(i))}");
+                .Select(i => $"  {EscapedName(csv.GetName(i), AllowSpaces)} {SqlColumnType(csv.GetFieldTypeExtended(i, StringFields))}");
 
             sql += string.Join(", " + Environment.NewLine, columns);
 
@@ -206,7 +212,7 @@ namespace Elars.CsvToSql.Core
             while (await csv.ReadAsync())
             {
                 var values = Enumerable.Range(0, csv.FieldCount)
-                    .Select(i => EscapeValue(csv.GetValue(i), csv.GetFieldTypeExtended(i)));
+                    .Select(i => EscapeValue(csv.GetValue(i), csv.GetFieldTypeExtended(i, StringFields)));
 
                 valueCollection.Add("(" + string.Join(", ", values) + ")");
             }

@@ -1,9 +1,11 @@
 ﻿using Elars.CsvToSql.Core;
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Documents;
 
 namespace Elars.CsvToSql.UI
 {
@@ -84,7 +86,8 @@ namespace Elars.CsvToSql.UI
                 IdentityInsert = chkIdentityInsert.IsChecked.Value,
                 BatchSize = chkBatch.IsChecked.Value ? int.Parse(txtBatchSize.Text) : 1,
                 IndexColumn = chkCreateIndex.IsChecked.Value ? int.Parse(txtIndexColumn.Text) : (int?)null,
-                TruncateTable = chkTruncate.IsChecked.Value
+                TruncateTable = chkTruncate.IsChecked.Value,
+                StringFields = new List<string> { "ZipCode" }
             };
         }
 
