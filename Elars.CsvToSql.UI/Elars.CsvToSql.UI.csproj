@@ -5,10 +5,32 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>CsvToSql.ico</ApplicationIcon>
+    <Title>CSV To SQL</Title>
+    <PackageIcon>CsvToSql.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/larsoneric/Elars.CsvToSql</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/larsoneric/Elars.CsvToSql/tree/main/Elars.CsvToSql.UI</RepositoryUrl>
+    <Copyright>Eric Larson</Copyright>
+    <AssemblyName>CsvToSql</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="CsvToSql.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Elars.CsvToSql.Core\Elars.CsvToSql.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="CsvToSql.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
