@@ -15,7 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="CsvToSql.ico" />
+    <Compile Remove="Screenshots\**" />
+    <EmbeddedResource Remove="Screenshots\**" />
+    <None Remove="Screenshots\**" />
+    <Page Remove="Screenshots\**" />
   </ItemGroup>
 
   <ItemGroup>
