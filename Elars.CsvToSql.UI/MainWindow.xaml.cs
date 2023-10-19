@@ -138,7 +138,7 @@ namespace Elars.CsvToSql.UI
 
             if (displayName == "Truncate Table" && (bool)e.NewValue == true)
             {
-                var response = System.Windows.MessageBox.Show("Are you sure you want to truncate the table?", "Truncate", MessageBoxButton.YesNo);
+                var response = MessageBox.Show("Are you sure you want to truncate the table?", "Truncate", MessageBoxButton.YesNo);
                 if (response == MessageBoxResult.No)
                 {
                     propertyItem.Value = false;
