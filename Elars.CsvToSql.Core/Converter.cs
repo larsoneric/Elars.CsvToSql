@@ -30,7 +30,21 @@ namespace Elars.CsvToSql.Core
         /// Name of the database table to insert records into
         /// Default: #tmp
         /// </summary>
-        public string TableName { get; set; } = "#tmp";
+        public bool IsTempTable { get; set; } = true;
+
+        /// <summary>
+        /// Name of the database table to insert records into
+        /// Default: #tmp
+        /// </summary>
+        public string TableName { get; set; } = "tmp";
+
+        private string TableNameTemp
+        {
+            get
+            {
+                return IsTempTable ? $"#{TableName}" : TableName;
+            }
+        }
 
         /// <summary>
         /// Size of INSERT batches; set to 1 to not use batches
@@ -56,14 +70,20 @@ namespace Elars.CsvToSql.Core
         /// </summary>
         /// <value>Default: false (non-clustered)</value>
         public bool ClusteredIndex { get; set; } = false;
-        
+
+        /// <summary>
+        /// Specifies whether or not to create an index
+        /// Default: false
+        /// </summary>
+        public bool CreateIndex { get; set; }
+
         /// <summary>
         /// Index of which column to create an index of
         /// If NULL, don't create an index
         /// Default: null
         /// </summary>
-        public int? IndexColumn { get; set; } = null;
-        
+        public int IndexColumn { get; set; }
+
         /// <summary>
         /// Reseed primary key, useful when IDENTITY_INSERT is on
         /// Assumes the first column is the index
@@ -153,7 +173,7 @@ namespace Elars.CsvToSql.Core
                 return string.Empty;
             }
 
-            string objectId = tableName.Contains('#') ? $"tempdb..{tableName}" : tableName;
+            string objectId = IsTempTable ? $"tempdb..{tableName}" : tableName;
 
             var sql = $"IF OBJECT_ID('{objectId}', 'U') IS NOT NULL DROP TABLE {tableName};{Environment.NewLine}{Environment.NewLine}";
 
@@ -195,7 +215,7 @@ namespace Elars.CsvToSql.Core
         {
             var sql = new StringBuilder();
 
-            var tableName = EscapedName(TableName, AllowSpaces);
+            var tableName = EscapedName(TableNameTemp, AllowSpaces);
             sql.Append(CreateTableSql(csv, tableName));
 
             if (TruncateTable)
@@ -236,12 +256,12 @@ namespace Elars.CsvToSql.Core
                 sql.AppendLine();
             }
 
-            if (IndexColumn.HasValue)
+            if (CreateIndex)
             {
-                var header = csv.GetName(IndexColumn.Value + 1).Trim('[', ']');
+                var header = csv.GetName(IndexColumn).Trim('[', ']');
                 var indexType = ClusteredIndex ? "CLUSTERED INDEX cx" : "NONCLUSTERED INDEX ix";
 
-                sql.AppendLine($"CREATE {indexType}_{TableName.Replace("#", "").Replace(" ", "")}_{header.Replace(" ", "")} ON {tableName} ([{header}]);");
+                sql.AppendLine($"CREATE {indexType}_{TableName.Replace(" ", "")}_{header.Replace(" ", "")} ON {tableName} ([{header}]);");
                 sql.AppendLine("GO");
                 sql.AppendLine();
             }
@@ -253,7 +273,7 @@ namespace Elars.CsvToSql.Core
 
                 if (Reseed)
                 {
-                    sql.AppendLine($"{Environment.NewLine}DECLARE @Id INT = (SELECT MAX([{csv.GetName(0)}]) FROM {tableName});");
+                    sql.AppendLine($"{Environment.NewLine}DECLARE @Id INT = (SELECT MAX([{csv.GetName(IndexColumn)}]) FROM {tableName});");
                     sql.AppendLine($"DBCC CHECKIDENT ('{tableName}', RESEED, @Id);");
                 }
             }

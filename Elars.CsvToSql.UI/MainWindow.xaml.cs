@@ -1,11 +1,11 @@
-﻿using Elars.CsvToSql.Core;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Documents;
+using Xceed.Wpf.Toolkit.PropertyGrid;
 
 namespace Elars.CsvToSql.UI
 {
@@ -14,43 +14,12 @@ namespace Elars.CsvToSql.UI
     /// </summary>
     public partial class MainWindow : Window
     {
+        Options _options = new Options();
+
         public MainWindow()
         {
             InitializeComponent();
-            InitializeConverterProperties();
-        }
-
-        private void InitializeConverterProperties()
-        {
-            var converter = new Converter();
-
-            txtTableName.Text = converter.TableName;
-            txtBatchSize.Text = converter.BatchSize.ToString();
-            chkBatch.IsChecked = converter.BatchSize > 1;
-            chkAllowSpaces.IsChecked = converter.AllowSpaces;
-            chkCreateTable.IsChecked = converter.CreateTable;
-            chkReseed.IsChecked = converter.Reseed;
-            chkNoCount.IsChecked = converter.NoCount;
-            radClustered.IsChecked = converter.ClusteredIndex;
-            radNonclustered.IsChecked = !converter.ClusteredIndex;
-            chkIdentityInsert.IsChecked = converter.IdentityInsert;
-            chkTruncate.IsChecked = converter.TruncateTable;
-
-            chkBatch_Click(null, null);
-            chkIdentityInsert_Click(null, null);
-            chkCreateIndex_Click(null, null);
-            txtSql_TextChanged(null, null);
-        }
-
-        private async void btnFromClipboard_Click(object sender, RoutedEventArgs e)
-        {
-            if (!Clipboard.ContainsText())
-            {
-                txtStatus.Text = "Clipboard does not contain text";
-                return;
-            }
-
-            await ProcessText(Clipboard.GetText());
+            propertyGrid.SelectedObject = _options;
         }
 
         private async Task ProcessText(string text)
@@ -59,8 +28,16 @@ namespace Elars.CsvToSql.UI
 
             try
             {
-                var converter = NewConverter();
-                txtSql.Text = await converter.ProcessString(text);
+                var converter = _options.ToConverter();
+                string sql = "";
+
+                // try to get the progress bar to appear
+                await Task.Run(async () =>
+                {
+                    sql = await converter.ProcessString(text);
+                });
+
+                txtSql.Text = sql;
                 txtStatus.Text = converter.NumberOfRecords.ToString() + " record" + (converter.NumberOfRecords != 1 ? "s" : "");
             }
             catch (Exception ex)
@@ -73,61 +50,30 @@ namespace Elars.CsvToSql.UI
             }
         }
 
-        private Converter NewConverter()
+        private void HelpCommand_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
-            return new Converter
-            {
-                TableName = txtTableName.Text,
-                CreateTable = chkCreateTable.IsChecked.Value,
-                Reseed = chkReseed.IsChecked.Value,
-                NoCount = chkNoCount.IsChecked.Value,
-                AllowSpaces = chkAllowSpaces.IsChecked.Value,
-                ClusteredIndex = radClustered.IsChecked.Value,
-                IdentityInsert = chkIdentityInsert.IsChecked.Value,
-                BatchSize = chkBatch.IsChecked.Value ? int.Parse(txtBatchSize.Text) : 1,
-                IndexColumn = chkCreateIndex.IsChecked.Value ? int.Parse(txtIndexColumn.Text) : (int?)null,
-                TruncateTable = chkTruncate.IsChecked.Value,
-                StringFields = new List<string> { "ZipCode" }
-            };
+            var p = new Process();
+            p.StartInfo.UseShellExecute = true;
+            p.StartInfo.FileName = "https://github.com/larsoneric/Elars.CsvToSql";
+            p.Start();
         }
 
-        private void btnToClipboard_Click(object sender, RoutedEventArgs e)
+        private void HelpCommand_CanExecute(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
         {
-            Clipboard.SetText(txtSql.Text);
-            txtStatus.Text = "Done";
+            e.CanExecute = true;
         }
 
-        private void chkBatch_Click(object sender, RoutedEventArgs e)
+        private void CloseCommand_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
-            txtBatchSize.IsEnabled = chkBatch.IsChecked.Value;
+            this.Close();
         }
 
-        private void chkIdentityInsert_Click(object sender, RoutedEventArgs e)
+        private void CloseCommand_CanExecute(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
         {
-            chkReseed.IsEnabled = chkIdentityInsert.IsChecked.Value;
+            e.CanExecute = true;
         }
 
-        private void chkCreateIndex_Click(object sender, RoutedEventArgs e)
-        {
-            txtIndexColumn.IsEnabled = chkCreateIndex.IsChecked.Value;
-            radClustered.IsEnabled = chkCreateIndex.IsChecked.Value;
-            radNonclustered.IsEnabled = chkCreateIndex.IsChecked.Value;
-        }
-
-        private void txtSql_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            btnSaveFile.IsEnabled = !string.IsNullOrEmpty(txtSql.Text);
-            btnToClipboard.IsEnabled = !string.IsNullOrEmpty(txtSql.Text);
-        }
-
-        private void chkTruncate_Checked(object sender, RoutedEventArgs e)
-        {
-            var response = MessageBox.Show("Are you sure you want to truncate the table?", "Truncate", MessageBoxButton.YesNo);
-            if (response == MessageBoxResult.No)
-                chkTruncate.IsChecked = false;
-        }
-
-        private async void btnOpenFile_Click(object sender, RoutedEventArgs e)
+        private async void OpenCommand_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
             var openFileDialog = new OpenFileDialog
             {
@@ -141,7 +87,12 @@ namespace Elars.CsvToSql.UI
             await ProcessText(text);
         }
 
-        private void btnSaveFile_Click(object sender, RoutedEventArgs e)
+        private void OpenCommand_CanExecute(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void SaveCommand_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
             var saveFileDialog = new SaveFileDialog
             {
@@ -152,6 +103,90 @@ namespace Elars.CsvToSql.UI
                 File.WriteAllText(saveFileDialog.FileName, txtSql.Text);
 
             txtStatus.Text = "Done";
+        }
+
+        private void SaveCommand_CanExecute(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = !string.IsNullOrEmpty(txtSql.Text);
+        }
+
+        private void CopyCommand_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            Clipboard.SetText(txtSql.Text);
+            txtStatus.Text = "Done";
+        }
+
+        private void CopyCommand_CanExecute(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = !string.IsNullOrEmpty(txtSql.Text);
+        }
+
+        private async void PasteCommand_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            await ProcessText(Clipboard.GetText());
+        }
+
+        private void PasteCommand_CanExecute(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = Clipboard.ContainsText();
+        }
+
+        private void propertyGrid_PropertyValueChanged(object sender, PropertyValueChangedEventArgs e)
+        {
+            var propertyItem = (PropertyItem)e.OriginalSource;
+            var displayName = propertyItem.DisplayName;
+
+            if (displayName == "Truncate Table" && (bool)e.NewValue == true)
+            {
+                var response = System.Windows.MessageBox.Show("Are you sure you want to truncate the table?", "Truncate", MessageBoxButton.YesNo);
+                if (response == MessageBoxResult.No)
+                {
+                    propertyItem.Value = false;
+                }
+            }
+
+            var refreshColumns = new[] { "Use Batches", "Create Table", "Create Index", "Identity Insert", "Reseed" };
+            if (refreshColumns.Contains(displayName))
+            {
+                propertyGrid.SelectedObject = null;
+                propertyGrid.SelectedObject = _options;
+            }
+        }
+
+        private void propertyGrid_PreparePropertyItem(object sender, PropertyItemEventArgs e)
+        {
+            var propertyItem = (PropertyItem)e.Item;
+            var displayName = propertyItem.DisplayName;
+
+            if (displayName == "Batch Size")
+            {
+                propertyItem.Visibility = _options.ShowBatchSize() ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            if (displayName == "Identity Insert")
+            {
+                propertyItem.Visibility = _options.ShowIdentityInsert() ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            if (displayName == "Reseed")
+            {
+                propertyItem.Visibility = _options.ShowReseed() ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            if (displayName == "Index Type")
+            {
+                propertyItem.Visibility = _options.ShowIndexType() ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            if (displayName == "Truncate Table")
+            {
+                propertyItem.Visibility = _options.ShowTruncateTable() ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            if (displayName == "Index Column")
+            {
+                propertyItem.Visibility = _options.ShowIndexColumn() ? Visibility.Visible : Visibility.Collapsed;
+            }
         }
     }
 }
