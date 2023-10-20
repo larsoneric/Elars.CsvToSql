@@ -22,7 +22,7 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="275" />
+            <ColumnDefinition Width="280" />
         </Grid.ColumnDefinitions>
 
         <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Padding="5">
