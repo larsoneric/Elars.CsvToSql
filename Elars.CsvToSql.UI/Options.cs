@@ -165,7 +165,7 @@ namespace Elars.CsvToSql.UI
                 IsTempTable = this.IsTempTable,
                 TableName = this.TableName,
                 CreateTable = this.CreateTable,
-                Reseed = this.Reseed,
+                Reseed = this.IdentityInsert && this.Reseed,
                 NoCount = this.NoCount,
                 AllowSpaces = this.AllowSpaces,
                 ClusteredIndex = this.IndexType == IndexTypes.Clustered,
@@ -178,6 +178,7 @@ namespace Elars.CsvToSql.UI
                 DatabaseType = this.DatabaseType,
                 UseGoStatements = this.UseGoStatements,
                 StringSize = this.StringSize,
+                IncludeTime = this.IncludeTime
             };
         }
     }

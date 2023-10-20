@@ -11,7 +11,7 @@ namespace Elars.CsvToSql.Core.DatabaseTypes
 
         public string NoCount(bool on)
         {
-            return "SET NOCOUNT " + (on ? "ON" : "OFF");
+            return "SET NOCOUNT " + (on ? "ON" : "OFF") + ";";
         }
 
         public string DropTable(bool tempTable, string tableName)
@@ -40,7 +40,7 @@ namespace Elars.CsvToSql.Core.DatabaseTypes
 
         public string IdentityInsert(string tableName, bool on)
         {
-            throw new NotImplementedException();
+            return $"SET IDENTITY_INSERT {EscapeName(tableName, false)} {( on ? "ON" : "OFF" )};";
         }
 
         public string Reseed(string tableName, string columnName)

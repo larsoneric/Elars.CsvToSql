@@ -256,6 +256,8 @@ namespace Elars.CsvToSql.Core
                     
                     if (UseGoStatements && _databaseType.SupportsGoStatements)
                         sql.AppendLine("GO" + Environment.NewLine);
+                    else
+                        sql.AppendLine();
                 }
             }
             else
@@ -281,14 +283,14 @@ namespace Elars.CsvToSql.Core
 
                 if (Reseed)
                 {
-                    sql.Append(Environment.NewLine + _databaseType.Reseed(tableName, csv.GetName(IndexColumn)));
+                    sql.AppendLine(_databaseType.Reseed(tableName, csv.GetName(IndexColumn)));
                 }
             }
 
             if (NoCount && _databaseType.SupportsNoCount)
             {
                 sql.Insert(0, $"{_databaseType.NoCount(true)}{Environment.NewLine}{Environment.NewLine}");
-                sql.AppendLine(Environment.NewLine + _databaseType.NoCount(false));
+                sql.AppendLine(_databaseType.NoCount(false));
             }
 
             return sql.ToString();
