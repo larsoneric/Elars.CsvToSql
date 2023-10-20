@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://github.com/larsoneric/Elars.CsvToSql</PackageProjectUrl>
     <RepositoryUrl>https://github.com/larsoneric/Elars.CsvToSql/tree/main/Elars.CsvToSql.UI</RepositoryUrl>
     <Copyright>Eric Larson</Copyright>
-    <AssemblyName>CsvToSql</AssemblyName>
+    <AssemblyName></AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

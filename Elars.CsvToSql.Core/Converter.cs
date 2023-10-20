@@ -1,4 +1,5 @@
-﻿using Elars.CsvToSql.Core.Extensions;
+﻿using Elars.CsvToSql.Core.DatabaseTypes;
+using Elars.CsvToSql.Core.Extensions;
 using Sylvan.Data.Csv;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,18 @@ namespace Elars.CsvToSql.Core
     /// </summary>
     public class Converter
     {
+        /// <summary>
+        /// Type of database to generate statements for
+        /// Default: MsSql
+        /// </summary>
+        public DatabaseTypes.DatabaseTypes DatabaseType { get; set; } = DatabaseTypes.DatabaseTypes.MsSql;
+
+        /// <summary>
+        /// Include GO statements between operations
+        /// Default: true
+        /// </summary>
+        public bool UseGoStatements { get; set; } = true;
+
         /// <summary>
         /// Flag indicating whether to generate the CREATE TABLE staement
         /// Default: true
@@ -37,14 +50,6 @@ namespace Elars.CsvToSql.Core
         /// Default: #tmp
         /// </summary>
         public string TableName { get; set; } = "tmp";
-
-        private string TableNameTemp
-        {
-            get
-            {
-                return IsTempTable ? $"#{TableName}" : TableName;
-            }
-        }
 
         /// <summary>
         /// Size of INSERT batches; set to 1 to not use batches
@@ -127,6 +132,8 @@ namespace Elars.CsvToSql.Core
         /// </summary>
         public int NumberOfRecords { get; private set; }
 
+        private IDatabaseType _databaseType;
+
         /// <summary>
         /// Convert a .csv or .txt file to SQL INSERT statements
         /// </summary>
@@ -169,22 +176,22 @@ namespace Elars.CsvToSql.Core
         private string CreateTableSql(CsvDataReader csv, string tableName)
         {
             if (!CreateTable)
-            {
                 return string.Empty;
-            }
 
-            string objectId = IsTempTable ? $"tempdb..{tableName}" : tableName;
-
-            var sql = $"IF OBJECT_ID('{objectId}', 'U') IS NOT NULL DROP TABLE {tableName};{Environment.NewLine}{Environment.NewLine}";
-
-            sql += $"CREATE TABLE {tableName} ({Environment.NewLine}";
+            var sql = _databaseType.DropTable(IsTempTable, tableName) + Environment.NewLine + Environment.NewLine;
+            sql += _databaseType.CreateTable(IsTempTable, tableName) + Environment.NewLine;
 
             var columns = Enumerable.Range(0, csv.FieldCount)
                 .Select(i => $"  {EscapedName(csv.GetName(i), AllowSpaces)} {SqlColumnType(csv.GetFieldTypeExtended(i, StringFields))}");
 
             sql += string.Join(", " + Environment.NewLine, columns);
 
-            sql += $");{Environment.NewLine}GO{Environment.NewLine}{Environment.NewLine}";
+            sql += $");{Environment.NewLine}";
+
+            if (UseGoStatements && _databaseType.SupportsGoStatements)
+                sql += $"GO{Environment.NewLine}";
+            
+            sql += Environment.NewLine;
 
             return sql;
         }
@@ -197,25 +204,24 @@ namespace Elars.CsvToSql.Core
             if (type == typeof(decimal))
                 return $"DECIMAL({18 - DecimalPlaces},{DecimalPlaces})";
 
-            if (type == typeof(DateTime) && IncludeTime)
-                return "DATETIME";
-
             if (type == typeof(DateTime))
-                return "DATE";
+                return IncludeTime ? "DATETIME" : "DATE";
 
             return $"VARCHAR({StringSize})";
         }
 
-        private static string EscapedName(string name, bool allowSpaces)
+        private string EscapedName(string name, bool allowSpaces)
         {
-            return $"[{(allowSpaces ? name : name.Replace(" ", ""))}]";
+            return _databaseType.EscapeName(name, allowSpaces);
         }
 
         private async Task<string> GenerateSql(CsvDataReader csv)
         {
+            SetDatabaseType();
+
             var sql = new StringBuilder();
 
-            var tableName = EscapedName(TableNameTemp, AllowSpaces);
+            var tableName = EscapedName(_databaseType.TempTableName(TableName, IsTempTable), AllowSpaces);
             sql.Append(CreateTableSql(csv, tableName));
 
             if (TruncateTable)
@@ -247,7 +253,9 @@ namespace Elars.CsvToSql.Core
                 {
                     var batch = valueCollection.Skip(i).Take(BatchSize);
                     sql.AppendLine(insertStatement + string.Join($",{Environment.NewLine}    ", batch) + ";");
-                    sql.AppendLine("GO" + Environment.NewLine);
+                    
+                    if (UseGoStatements && _databaseType.SupportsGoStatements)
+                        sql.AppendLine("GO" + Environment.NewLine);
                 }
             }
             else
@@ -258,35 +266,44 @@ namespace Elars.CsvToSql.Core
 
             if (CreateIndex)
             {
-                var header = csv.GetName(IndexColumn).Trim('[', ']');
-                var indexType = ClusteredIndex ? "CLUSTERED INDEX cx" : "NONCLUSTERED INDEX ix";
-
-                sql.AppendLine($"CREATE {indexType}_{TableName.Replace(" ", "")}_{header.Replace(" ", "")} ON {tableName} ([{header}]);");
-                sql.AppendLine("GO");
+                sql.AppendLine(_databaseType.CreateIndex(TableName, csv.GetName(IndexColumn), ClusteredIndex));
+                
+                if (UseGoStatements && _databaseType.SupportsGoStatements)
+                    sql.AppendLine("GO");
+                
                 sql.AppendLine();
             }
 
             if (IdentityInsert)
             {
-                sql.Insert(0, $"SET IDENTITY_INSERT {tableName} ON;{Environment.NewLine}{Environment.NewLine}");
-                sql.AppendLine($"SET IDENTITY_INSERT {tableName} OFF;");
+                sql.Insert(0, _databaseType.IdentityInsert(tableName, true) + Environment.NewLine + Environment.NewLine);
+                sql.AppendLine(_databaseType.IdentityInsert(tableName, false));
 
                 if (Reseed)
                 {
-                    sql.AppendLine($"{Environment.NewLine}DECLARE @Id INT = (SELECT MAX([{csv.GetName(IndexColumn)}]) FROM {tableName});");
-                    sql.AppendLine($"DBCC CHECKIDENT ('{tableName}', RESEED, @Id);");
+                    sql.Append(Environment.NewLine + _databaseType.Reseed(tableName, csv.GetName(IndexColumn)));
                 }
             }
 
-            if (NoCount)
+            if (NoCount && _databaseType.SupportsNoCount)
             {
-                sql.Insert(0, $"SET NOCOUNT ON;{Environment.NewLine}{Environment.NewLine}");
-                sql.AppendLine($"SET NOCOUNT OFF;");
+                sql.Insert(0, $"{_databaseType.NoCount(true)}{Environment.NewLine}{Environment.NewLine}");
+                sql.AppendLine(Environment.NewLine + _databaseType.NoCount(false));
             }
 
             return sql.ToString();
         }
-        
+
+        private void SetDatabaseType()
+        {
+            var type = Type.GetType(GetType().Namespace + ".DatabaseTypes." + DatabaseType.ToString());
+            
+            if (type == null)
+                throw new Exception("Could not determine database type: " + DatabaseType.ToString());
+
+            _databaseType = Activator.CreateInstance(type) as IDatabaseType;
+        }
+
         private string EscapeValue(object value, Type type)
         {
             if (value == null)
@@ -296,12 +313,7 @@ namespace Elars.CsvToSql.Core
             {
                 if (DateTime.TryParse(value.ToString(), out var date) && date != DateTime.MinValue)
                 {
-                    if (IncludeTime)
-                    {
-                        return "'" + date.ToString("yyyyMMdd hh:mm:ss tt") + "'";
-                    }
-
-                    return "'" + date.ToString("yyyyMMdd") + "'";
+                    return "'" + date.ToString(IncludeTime ? _databaseType.DateTimeFormat : _databaseType.DateFormat) + "'";
                 }
 
                 return "NULL";

@@ -1,4 +1,5 @@
 ﻿using Elars.CsvToSql.Core;
+using Elars.CsvToSql.Core.DatabaseTypes;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -7,6 +8,7 @@ using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 namespace Elars.CsvToSql.UI
 {
+    [CategoryOrder("Database", 0)]
     [CategoryOrder("Table", 1)]
     [CategoryOrder("Identity", 2)]
     [CategoryOrder("Fields", 3)]
@@ -23,6 +25,7 @@ namespace Elars.CsvToSql.UI
         {
             var converter = new Converter();
 
+            DatabaseType = converter.DatabaseType;
             IsTempTable = converter.IsTempTable;
             TableName = converter.TableName;
             BatchSize = converter.BatchSize;
@@ -38,7 +41,16 @@ namespace Elars.CsvToSql.UI
             IndexColumn = 1;
             DecimalPlaces = converter.DecimalPlaces;
             StringSize = converter.StringSize;
+            UseGoStatements = converter.UseGoStatements;
         }
+
+        [Category("Database")]
+        [Display(Name = "Database Type", Order = 0, Description = "Type of database to generate statements for")]
+        public DatabaseTypes DatabaseType { get; set; }
+
+        [Category("Database")]
+        [Display(Name = "Use GO Statements", Order = 1, Description = "Use GO statements between operations")]
+        public bool UseGoStatements { get; set; }
 
         [Category("Table")]
         [Display(Name = "Table Name", Order = 0, Description = "Name of the database table to insert records into")]
@@ -138,7 +150,7 @@ namespace Elars.CsvToSql.UI
 
         internal bool ShowIndexColumn()
         {
-            return CreateIndex || Reseed;
+            return CreateIndex || (Reseed && IdentityInsert);
         }
 
         internal bool ShowTruncateTable()
@@ -150,19 +162,22 @@ namespace Elars.CsvToSql.UI
         {
             return new Converter
             {
-                IsTempTable = IsTempTable,
-                TableName = TableName,
-                CreateTable = CreateTable,
-                Reseed = Reseed,
-                NoCount = NoCount,
-                AllowSpaces = AllowSpaces,
-                ClusteredIndex = IndexType == IndexTypes.Clustered,
-                IdentityInsert = IdentityInsert,
-                BatchSize = UseBatches ? BatchSize : 1,
-                IndexColumn = CreateIndex || Reseed ? IndexColumn - 1 : 0,
-                TruncateTable = TruncateTable,
-                StringFields = StringFields,
-                CreateIndex = CreateIndex
+                IsTempTable = this.IsTempTable,
+                TableName = this.TableName,
+                CreateTable = this.CreateTable,
+                Reseed = this.Reseed,
+                NoCount = this.NoCount,
+                AllowSpaces = this.AllowSpaces,
+                ClusteredIndex = this.IndexType == IndexTypes.Clustered,
+                IdentityInsert = this.IdentityInsert,
+                BatchSize = this.UseBatches ? this.BatchSize : 1,
+                IndexColumn = this.CreateIndex || this.Reseed ? this.IndexColumn - 1 : 0,
+                TruncateTable = this.TruncateTable,
+                StringFields = this.StringFields,
+                CreateIndex = this.CreateIndex,
+                DatabaseType = this.DatabaseType,
+                UseGoStatements = this.UseGoStatements,
+                StringSize = this.StringSize,
             };
         }
     }
