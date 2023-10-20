@@ -150,6 +150,7 @@ namespace Elars.CsvToSql.UI
             {
                 propertyGrid.SelectedObject = null;
                 propertyGrid.SelectedObject = _options;
+                propertyGrid.SelectedProperty = propertyItem;
             }
         }
 
