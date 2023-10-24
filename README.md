@@ -16,10 +16,10 @@ SET NOCOUNT ON;
 IF OBJECT_ID('tempdb..[#tmp]', 'U') IS NOT NULL DROP TABLE [#tmp];
 
 CREATE TABLE [#tmp] (
-  [Id] INT, 
-  [FirstName] VARCHAR(100), 
-  [FavoriteColor] VARCHAR(100), 
-  [DateofBirth] DATE);
+  [Id] INT NOT NULL, 
+  [FirstName] VARCHAR(100) NOT NULL, 
+  [FavoriteColor] VARCHAR(100) NOT NULL, 
+  [DateofBirth] DATE NOT NULL);
 GO
 
 INSERT INTO [#tmp] ([Id], [FirstName], [FavoriteColor], [DateofBirth]) VALUES 
