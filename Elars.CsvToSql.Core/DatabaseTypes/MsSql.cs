@@ -27,31 +27,44 @@ namespace Elars.CsvToSql.Core.DatabaseTypes
 
         public string EscapeName(string name, bool allowSpaces)
         {
-            return $"[{(allowSpaces ? name : name.Replace(" ", ""))}]";
+            return $"[{SchemaName(name, allowSpaces)}]";
         }
 
-        public string CreateIndex(string tableName, string column, bool clustered)
+        private string SchemaName(string name, bool allowSpaces)
         {
-            var header = column.Trim('[', ']');
-            var indexType = clustered ? "CLUSTERED INDEX cx" : "NONCLUSTERED INDEX ix";
+            return allowSpaces ? name : name.Replace(" ", "");
+        }
 
-            return $"CREATE {indexType}_{tableName.Replace(" ", "")}_{header.Replace(" ", "")} ON {tableName} ([{header}]);";
+        public string CreateIndex(string tableName, string column, bool clustered, bool allowSpaces)
+        {
+            var indexType = clustered ? "CLUSTERED INDEX cx" : "NONCLUSTERED INDEX ix";
+            return $"CREATE {indexType}_{SchemaName(tableName, false).Replace("#", "")}_{SchemaName(column, false)} ON {tableName} ({EscapeName(column, allowSpaces)});";
+        }
+
+        public string IdentityConstraint(string tableName, string column, bool allowSpaces)
+        {
+            return $"CONSTRAINT PK_{SchemaName(tableName, false)} PRIMARY KEY ({EscapeName(column, allowSpaces)})";
         }
 
         public string IdentityInsert(string tableName, bool on)
         {
-            return $"SET IDENTITY_INSERT {EscapeName(tableName, false)} {( on ? "ON" : "OFF" )};";
+            return $"SET IDENTITY_INSERT {tableName} {( on ? "ON" : "OFF" )};";
         }
 
-        public string Reseed(string tableName, string columnName)
+        public string Reseed(string tableName, string columnName, bool allowSpaces)
         {
-            return $"{Environment.NewLine}DECLARE @Id INT = (SELECT MAX([{columnName}]) FROM {tableName});{Environment.NewLine}" +
-                   $"DBCC CHECKIDENT ('{tableName}', RESEED, @Id);{Environment.NewLine}";
+            return $"DECLARE @Id INT = (SELECT MAX({EscapeName(columnName, allowSpaces)}) FROM {tableName});{Environment.NewLine}" +
+                   $"DBCC CHECKIDENT ('{tableName}', RESEED, @Id);";
         }
 
         public string TempTableName(string tableName, bool tempTable)
         {
             return tempTable ? $"#{tableName}" : tableName;
+        }
+
+        public string IdentityColumnIncrement()
+        {
+            return "IDENTITY (1, 1)";
         }
     }
 }

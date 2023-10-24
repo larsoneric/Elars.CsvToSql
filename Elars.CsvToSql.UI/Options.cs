@@ -1,5 +1,6 @@
 ﻿using Elars.CsvToSql.Core;
 using Elars.CsvToSql.Core.DatabaseTypes;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -42,6 +43,9 @@ namespace Elars.CsvToSql.UI
             DecimalPlaces = converter.DecimalPlaces;
             StringSize = converter.StringSize;
             UseGoStatements = converter.UseGoStatements;
+            CreateIdentity = converter.CreateIdentity;
+            IdentityColumn = 1;
+            AllowNulls = converter.AllowNulls;
         }
 
         [Category("Database")]
@@ -49,9 +53,9 @@ namespace Elars.CsvToSql.UI
         public DatabaseTypes DatabaseType { get; set; }
 
         [Category("Database")]
-        [Display(Name = "Use GO Statements", Order = 1, Description = "Use GO statements between operations")]
+        [Display(Name = "Use GO Statements", Order = 1, Description = "Use GO statements between operations (if supported by database)")]
         public bool UseGoStatements { get; set; }
-
+        
         [Category("Table")]
         [Display(Name = "Table Name", Order = 0, Description = "Name of the database table to insert records into")]
         public string TableName { get; set; }
@@ -72,29 +76,38 @@ namespace Elars.CsvToSql.UI
         [Display(Name = "Truncate Table", Order = 4, Description = "Delete all records from a table before inserting")]
         public bool TruncateTable { get; set; }
 
-
+        
         [Category("Identity")]
-        [Display(Name = "Create Index", Order = 0, Description = "Create an index")]
-        public bool CreateIndex { get; set; }
-
-        [Category("Identity")]
-        [Display(Name = "Index Type", Order = 1, Description = "Create a clustered or non/clustered index")]
-        public IndexTypes IndexType { get; set; }
-
-        [Category("Identity")]
-        [Display(Name = "Identity Insert", Order = 2, Description = "Toggle IDENTITY_INSERT to allow ID fields to be inserted")]
-        public bool IdentityInsert { get; set; }
-
-        [Category("Identity")]
-        [Display(Name = "Reseed", Order = 3, Description = "Reseed primary key, useful when IDENTITY_INSERT is on; Assumes the first column is the index")]
-        public bool Reseed { get; set; }
+        [Display(Name = "Create Identity", Order = 0, Description = "Create an identity column")]
+        public bool CreateIdentity { get; set; }
 
         [Category("Identity")]
         [Range(1, int.MaxValue)]
-        [Display(Name = "Index Column", Order = 4, Description = "Index of which column to create an index of. If NULL, don't create an index")]
+        [Display(Name = "Identity Column", Order = 5, Description = "Index of which column to create an identity for.")]
+        public int IdentityColumn { get; set; }
+
+        [Category("Identity")]
+        [Display(Name = "Identity Insert", Order = 10, Description = "Toggle IDENTITY_INSERT to allow ID fields to be inserted")]
+        public bool IdentityInsert { get; set; }
+
+        [Category("Identity")]
+        [Display(Name = "Reseed", Order = 15, Description = "Reseed primary key, useful when IDENTITY_INSERT is on; Uses the Identity Column")]
+        public bool Reseed { get; set; }
+        
+        [Category("Identity")]
+        [Display(Name = "Create Index", Order = 20, Description = "Create an index")]
+        public bool CreateIndex { get; set; }
+
+        [Category("Identity")]
+        [Range(1, int.MaxValue)]
+        [Display(Name = "Index Column", Order = 25, Description = "Index of which column to create an index of.")]
         public int IndexColumn { get; set; }
 
+        [Category("Identity")]
+        [Display(Name = "Index Type", Order = 30, Description = "Create a clustered or non/clustered index")]
+        public IndexTypes IndexType { get; set; }
 
+        
         [Category("Insert SQL")]
         [Display(Name = "Use Batches", Order = 0, Description = "If false, records will be inserted one at a time")]
         public bool UseBatches { get; set; }
@@ -108,6 +121,10 @@ namespace Elars.CsvToSql.UI
         [Display(Name = "NoCount", GroupName = "Insert SQL", Order = 2, Description = "Toggle NOCOUNT to prevent records from being counted")]
         public bool NoCount { get; set; }
 
+
+        [Category("Fields")]
+        [Display(Name = "Allow Nulls", Description = "Allow nulls on columns")]
+        public bool AllowNulls { get; set; }
 
         [Category("Fields")]
         [Display(Name = "String Fields", Description = "Fields that should always be treated as strings (e.g. Zip Code)")]
@@ -128,35 +145,14 @@ namespace Elars.CsvToSql.UI
         public bool IncludeTime { get; set; }
 
 
-        internal bool ShowBatchSize()
-        {
-            return UseBatches;
-        }
-
-        internal bool ShowIdentityInsert()
-        {
-            return !CreateIndex;
-        }
-
-        internal bool ShowIndexType()
-        {
-            return CreateIndex;
-        }
-
-        internal bool ShowReseed()
-        {
-            return IdentityInsert && !CreateIndex;
-        }
-
-        internal bool ShowIndexColumn()
-        {
-            return CreateIndex || (Reseed && IdentityInsert);
-        }
-
-        internal bool ShowTruncateTable()
-        {
-            return !CreateTable;
-        }
+        internal bool ShowBatchSize() => UseBatches;
+        internal bool ShowIdentityInsert() => CreateIdentity || !CreateTable;
+        internal bool ShowIdentityColumn() => CreateIdentity;
+        internal bool ShowIndexType() => CreateIndex;
+        internal bool ShowReseed() => IdentityInsert;
+        internal bool ShowIndexColumn() => CreateIndex;
+        internal bool ShowTruncateTable() => !CreateTable;
+        internal bool ShowAllowNulls() => CreateTable;
 
         internal Converter ToConverter()
         {
@@ -178,8 +174,11 @@ namespace Elars.CsvToSql.UI
                 DatabaseType = this.DatabaseType,
                 UseGoStatements = this.UseGoStatements,
                 StringSize = this.StringSize,
-                IncludeTime = this.IncludeTime
-            };
+                IncludeTime = this.IncludeTime,
+                AllowNulls = this.AllowNulls,
+                CreateIdentity = this.CreateIdentity,
+                IdentityColumn = this.IdentityColumn,
+        };
         }
     }
 }

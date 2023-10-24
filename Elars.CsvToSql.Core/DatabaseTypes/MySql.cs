@@ -11,14 +11,13 @@ namespace Elars.CsvToSql.Core.DatabaseTypes
 
         public string DateTimeFormat => "yyyy-MM-dd hh:mm:ss tt";
 
-        public string CreateIndex(string tableName, string column, bool clustered)
+        public string CreateIndex(string tableName, string column, bool clustered, bool allowSpaces)
         {
             if (clustered)
-                return $"ALTER TABLE {tableName} ADD PRIMARY KEY ({column});";
+                return $"ALTER TABLE {EscapeName(tableName, allowSpaces)} ADD PRIMARY KEY ({EscapeName(column, allowSpaces)});";
 
-            var header = column.Trim('[', ']');
-            var indexName = $"ix_{tableName.Replace(" ", "")}_{header.Replace(" ", "")}";
-            return $"ALTER TABLE {tableName} ADD INDEX {indexName} ({column});";
+            var indexName = $"ix_{SchemaName(tableName, false)}_{SchemaName(column, false)}";
+            return $"ALTER TABLE {EscapeName(tableName, allowSpaces)} ADD INDEX {indexName} ({EscapeName(column, allowSpaces)});";
         }
 
         public string CreateTable(bool tempTable, string tableName)
@@ -39,7 +38,17 @@ namespace Elars.CsvToSql.Core.DatabaseTypes
 
         public string EscapeName(string name, bool allowSpaces)
         {
-            return $"`{(allowSpaces ? name : name.Replace(" ", ""))}`";
+            return $"`{SchemaName(name, allowSpaces)}`";
+        }
+
+        private string SchemaName(string name, bool allowSpaces)
+        {
+            return allowSpaces ? name : name.Replace(" ", "");
+        }
+
+        public string IdentityConstraint(string tableName, string column, bool allowSpaces)
+        {
+            return $"CONSTRAINT `PK_{tableName}` PRIMARY KEY (`{column}`)";
         }
 
         public string IdentityInsert(string tableName, bool on)
@@ -52,10 +61,10 @@ namespace Elars.CsvToSql.Core.DatabaseTypes
             throw new NotImplementedException();
         }
 
-        public string Reseed(string tableName, string columnName)
+        public string Reseed(string tableName, string columnName, bool allowSpaces)
         {
-            var sql = $"SET @m = (SELECT MAX({columnName}) + 1 FROM `{tableName}`);" + Environment.NewLine;
-            sql += $"SET @s = CONCAT('ALTER TABLE `{tableName}` AUTO_INCREMENT = ', @m);" + Environment.NewLine;
+            var sql = $"SET @m = (SELECT MAX({EscapeName(columnName, allowSpaces)}) + 1 FROM {tableName});" + Environment.NewLine;
+            sql += $"SET @s = CONCAT('ALTER TABLE {tableName} AUTO_INCREMENT = ', @m);" + Environment.NewLine;
             sql += "PREPARE stmt1 FROM @s;" + Environment.NewLine;
             sql += "EXECUTE stmt1;" + Environment.NewLine;
             sql += "DEALLOCATE PREPARE stmt1;";
@@ -66,6 +75,11 @@ namespace Elars.CsvToSql.Core.DatabaseTypes
         public string TempTableName(string tableName, bool tempTable)
         {
             return tableName;
+        }
+
+        public string IdentityColumnIncrement()
+        {
+            return "AUTO_INCREMENT";
         }
     }
 }

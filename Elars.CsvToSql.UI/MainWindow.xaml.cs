@@ -50,6 +50,8 @@ namespace Elars.CsvToSql.UI
             }
         }
 
+        #region Menus
+
         private void HelpCommand_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
             var p = new Process();
@@ -131,6 +133,10 @@ namespace Elars.CsvToSql.UI
             e.CanExecute = Clipboard.ContainsText();
         }
 
+        #endregion
+
+        #region Property Grid
+
         private void propertyGrid_PropertyValueChanged(object sender, PropertyValueChangedEventArgs e)
         {
             var propertyItem = (PropertyItem)e.OriginalSource;
@@ -145,7 +151,7 @@ namespace Elars.CsvToSql.UI
                 }
             }
 
-            var refreshColumns = new[] { "Use Batches", "Create Table", "Create Index", "Identity Insert", "Reseed" };
+            var refreshColumns = new[] { "Use Batches", "Create Table", "Create Index", "Identity Insert", "Reseed", "Create Identity" };
             if (refreshColumns.Contains(displayName))
             {
                 propertyGrid.SelectedObject = null;
@@ -159,35 +165,42 @@ namespace Elars.CsvToSql.UI
             var propertyItem = (PropertyItem)e.Item;
             var displayName = propertyItem.DisplayName;
 
-            if (displayName == "Batch Size")
+            switch (displayName)
             {
-                propertyItem.Visibility = _options.ShowBatchSize() ? Visibility.Visible : Visibility.Collapsed;
-            }
+                case "Batch Size":
+                    propertyItem.Visibility = _options.ShowBatchSize() ? Visibility.Visible : Visibility.Collapsed;
+                    break;
 
-            if (displayName == "Identity Insert")
-            {
-                propertyItem.Visibility = _options.ShowIdentityInsert() ? Visibility.Visible : Visibility.Collapsed;
-            }
+                case "Allow Nulls":
+                    propertyItem.Visibility = _options.ShowAllowNulls() ? Visibility.Visible : Visibility.Collapsed;
+                    break;
 
-            if (displayName == "Reseed")
-            {
-                propertyItem.Visibility = _options.ShowReseed() ? Visibility.Visible : Visibility.Collapsed;
-            }
+                case "Identity Insert":
+                    propertyItem.Visibility = _options.ShowIdentityInsert() ? Visibility.Visible : Visibility.Collapsed;
+                    break;
 
-            if (displayName == "Index Type")
-            {
-                propertyItem.Visibility = _options.ShowIndexType() ? Visibility.Visible : Visibility.Collapsed;
-            }
+                case "Identity Column":
+                    propertyItem.Visibility = _options.ShowIdentityColumn() ? Visibility.Visible : Visibility.Collapsed;
+                    break;
 
-            if (displayName == "Truncate Table")
-            {
-                propertyItem.Visibility = _options.ShowTruncateTable() ? Visibility.Visible : Visibility.Collapsed;
-            }
+                case "Reseed":
+                    propertyItem.Visibility = _options.ShowReseed() ? Visibility.Visible : Visibility.Collapsed;
+                    break;
 
-            if (displayName == "Index Column")
-            {
-                propertyItem.Visibility = _options.ShowIndexColumn() ? Visibility.Visible : Visibility.Collapsed;
+                case "Index Type":
+                    propertyItem.Visibility = _options.ShowIndexType() ? Visibility.Visible : Visibility.Collapsed;
+                    break;
+
+                case "Truncate Table":
+                    propertyItem.Visibility = _options.ShowTruncateTable() ? Visibility.Visible : Visibility.Collapsed;
+                    break;
+
+                case "Index Column":
+                    propertyItem.Visibility = _options.ShowIndexColumn() ? Visibility.Visible : Visibility.Collapsed;
+                    break;
             }
         }
+
+        #endregion
     }
 }
