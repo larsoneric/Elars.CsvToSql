@@ -35,3 +35,13 @@ SET NOCOUNT OFF;
 Sample WPF app implementing Elars.CsvToSql.Core
 
 ![Screenshot 1](./Elars.CsvToSql.UI/Screenshots/screenshot1.png "CsvToSql UI")
+
+### Alternatives/Inspiration
+There are some great tools out there to do this. With sensitive data though, I'm reluctant to put the data on a third-party site.
+
+|Tool|Type|
+|----|----|
+|[CSV to SQL Convert](https://www.convertcsv.com/csv-to-sql.htm)|Website|
+|[csvkit csvsql](https://github.com/wireservice/csvkit)|Command line|
+|[Konbert Convert CSV to SQL](https://konbert.com/convert/csv/to/sql)|Website|
+|[Manage Engine CSV to SQL Converter](https://www.site24x7.com/tools/csv-to-sql.html)|Website|
